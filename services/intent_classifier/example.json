@@ -1,0 +1,18 @@
+{
+    "greet": [
+        "Howdy friend!",
+        "Hello dear",
+        "Oh hi pal!",
+        "Hello everyone",
+        "Bonjour mon ami",
+        "Nice to see you again",
+        "Good evening!"
+    ],
+    "bye": [
+        "Bye bye sweetie!",
+        "See you later",
+        "Goodbye friend!",
+        "See you soon!",
+        "Alright then"
+    ]
+}
