@@ -32,6 +32,8 @@ HEALTHCHECK --interval=5s --timeout=90s --retries=3 CMD curl --fail 127.0.0.1:12
 
 CMD gunicorn --workers=1 server:app -b 0.0.0.0:1234 --timeout=300
 
+EXPOSE 1234
+
 
 # GOAL 2: run that service
 # FROM pytorch/pytorch:1.5-cuda10.1-cudnn7-runtime

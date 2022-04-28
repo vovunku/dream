@@ -29,8 +29,7 @@ class MockArgs:
         self.warmup_proportion = 0.1
         self.adam_epsilon = 1e-8
         self.no_cuda = False
-        self.gradient_accumulation_steps = 42
-        self.seed = 2
+        self.gradient_accumulation_steps = 2
         self.max_grad_norm = 1.0
         self.label_smoothing = 0.1
         self.max_seq_length = 128
@@ -41,68 +40,57 @@ class MockArgs:
         self.output_dir = None
 
 
-args = MockArgs()
+def train_model():
+    args = MockArgs()
 
-random.seed(args.seed)
+    random.seed(args.seed)
 
-with open(args.train_file_path) as f:
-    train_data = json.load(f)
-print(train_data)
-
-class Example:
-    def __init__(self, text, label):
-        self.text = text
-        self.label = label
-
-train_examples = []
-for i, exs in train_data.items():
-    train_examples.extend([Example(i, e) for e in exs])
-    
-dev_examples = []
-# for i, e in train_part.iterrows():
-#     dev_examples.append(Example(e['text'], e['label']))
+    with open(args.train_file_path) as f:
+        train_data = json.load(f)
+    print(train_data)
 
 
-nli_train_examples = []
-nli_dev_examples = []
+    nli_train_examples = []
+    nli_dev_examples = []
 
-tasks = [{'task': i, 'examples': exs} for i, exs in train_data.items()]
-all_entailment_examples = []
-all_non_entailment_examples = []
+    tasks = [{'task': i, 'examples': exs} for i, exs in train_data.items()]
+    all_entailment_examples = []
+    all_non_entailment_examples = []
 
-# entailement
-for task in tasks:
-    examples = task['examples']
-    for j in range(len(examples)):
-        for k in range(len(examples)):
-            if k <= j:
+    # entailement
+    for task in tasks:
+        examples = task['examples']
+        for j in range(len(examples)):
+            for k in range(len(examples)):
+                if k <= j:
+                    continue
+
+                all_entailment_examples.append(InputExample(examples[j], examples[k], ENTAILMENT))
+                all_entailment_examples.append(InputExample(examples[k], examples[j], ENTAILMENT))
+
+    # non entailment
+    for task_1 in range(len(tasks)):
+        for task_2 in range(len(tasks)):
+            if task_2 <= task_1:
                 continue
+            examples_1 = tasks[task_1]['examples']
+            examples_2 = tasks[task_2]['examples']
+            for j in range(len(examples_1)):
+                for k in range(len(examples_2)):
+                    all_non_entailment_examples.append(InputExample(examples_1[j], examples_2[k], NON_ENTAILMENT))
+                    all_non_entailment_examples.append(InputExample(examples_2[k], examples_1[j], NON_ENTAILMENT))                    
 
-            all_entailment_examples.append(InputExample(examples[j], examples[k], ENTAILMENT))
-            all_entailment_examples.append(InputExample(examples[k], examples[j], ENTAILMENT))
+    nli_train_examples = all_entailment_examples + all_non_entailment_examples
+    nli_dev_examples = all_entailment_examples[:100] + all_non_entailment_examples[:100] # sanity check for over-fitting
 
-# non entailment
-for task_1 in range(len(tasks)):
-    for task_2 in range(len(tasks)):
-        if task_2 <= task_1:
-            continue
-        examples_1 = tasks[task_1]['examples']
-        examples_2 = tasks[task_2]['examples']
-        for j in range(len(examples_1)):
-            for k in range(len(examples_2)):
-                all_non_entailment_examples.append(InputExample(examples_1[j], examples_2[k], NON_ENTAILMENT))
-                all_non_entailment_examples.append(InputExample(examples_2[k], examples_1[j], NON_ENTAILMENT))                    
+    model = DNNC(path = args.bert_nli_path, args = args)
 
-nli_train_examples = all_entailment_examples + all_non_entailment_examples
-nli_dev_examples = all_entailment_examples[:100] + all_non_entailment_examples[:100] # sanity check for over-fitting
+    model.train(nli_train_examples, nli_dev_examples)
 
-model = DNNC(path = args.bert_nli_path, args = args)
+    intent_predictor = DnncIntentPredictor(model, tasks)
 
-# model.train(nli_train_examples, nli_dev_examples)
-
-intent_predictor = DnncIntentPredictor(model, tasks)
-
-print(intent_predictor.predict_intent("Hi there"))
+    print(intent_predictor.predict_intent("Hi there"))
+    return intent_predictor
 
 sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"), integrations=[FlaskIntegration()])
 
@@ -136,6 +124,7 @@ logger = logging.getLogger(__name__)
 #     logger.exception(e)
 #     raise e
 
+intent_predictor = train_model()
 app = Flask(__name__)
 health = HealthCheck(app, "/healthcheck")
 logging.getLogger("werkzeug").setLevel("WARNING")
@@ -154,7 +143,7 @@ def respond():
         intent_prediction = None
 
     total_time = time.time() - st_time
-    logger.info(f"masked_lm exec time: {total_time:.3f}s")
+    logger.info(f"DNNC exec time: {total_time:.3f}s")
     return jsonify({"predicted": intent_prediction})
 
 # test with 
