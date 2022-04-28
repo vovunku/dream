@@ -28,7 +28,7 @@ class MockArgs:
         self.num_train_epochs = 7
         self.warmup_proportion = 0.1
         self.adam_epsilon = 1e-8
-        self.no_cuda = True
+        self.no_cuda = False
         self.gradient_accumulation_steps = 42
         self.seed = 2
         self.max_grad_norm = 1.0

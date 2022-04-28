@@ -22,14 +22,15 @@ RUN pip install -r /src/requirements.txt
 COPY ./setup.sh /src/setup.sh
 RUN  ["sh", "/src/setup.sh"]
 
+RUN python -c 'from transformers import RobertaTokenizer; RobertaTokenizer.from_pretrained("roberta-base");'
+RUN python -c 'from transformers import RobertaModel; RobertaModel.from_pretrained("roberta-base");'
 
 # run service
 COPY . /src
-EXPOSE 5000
 
-# HEALTHCHECK --interval=5s --timeout=90s --retries=3 CMD curl --fail 127.0.0.1:${SERVICE_PORT}/healthcheck || exit 1
+HEALTHCHECK --interval=5s --timeout=90s --retries=3 CMD curl --fail 127.0.0.1:1234/healthcheck || exit 1
 
-# CMD gunicorn --workers=1 server:app -b 0.0.0.0:${SERVICE_PORT} --timeout=300
+CMD gunicorn --workers=1 server:app -b 0.0.0.0:1234 --timeout=300
 
 
 # GOAL 2: run that service
