@@ -35,7 +35,7 @@ class MockArgs:
         self.max_seq_length = 128
         self.do_lower_case = False
         self.bert_nli_path = "/src/DNNC-few-shot-intent/roberta_nli"
-        self.train_file_path = "/src/example.json"
+        self.train_file_path = "/src/train_data.json"
         self.save_model_path = ''
         self.output_dir = None
 
@@ -97,32 +97,6 @@ sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"), integrations=[FlaskIntegration()])
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# PRETRAINED_MODEL_NAME_OR_PATH = os.environ.get("PRETRAINED_MODEL_NAME_OR_PATH")
-# logging.info(f"PRETRAINED_MODEL_NAME_OR_PATH = {PRETRAINED_MODEL_NAME_OR_PATH}")
-# MASK_ID = 103
-# try:
-#     cuda = torch.cuda.is_available()
-#     if cuda:
-#         torch.cuda.set_device(0)  # singe gpu
-#         device = torch.device("cuda")
-#     else:
-#         device = torch.device("cpu")
-
-#     logger.info(f"masked_lm is set to run on {device}")
-
-#     # init model
-#     tokenizer = BertTokenizer.from_pretrained(PRETRAINED_MODEL_NAME_OR_PATH)
-#     model = BertForMaskedLM.from_pretrained(PRETRAINED_MODEL_NAME_OR_PATH)
-#     model.eval()
-#     if cuda:
-#         model.cuda()
-
-#     logger.info("masked_lm model is ready")
-# except Exception as e:
-#     sentry_sdk.capture_exception(e)
-#     logger.exception(e)
-#     raise e
 
 intent_predictor = train_model()
 app = Flask(__name__)
