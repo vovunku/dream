@@ -20,4 +20,4 @@ def test_respond(client):
     print(response)
     print(response.get_json())
     assert response.status_code == 200
-    assert response.get_json()['prediction'][0] == 'greet'
+    assert response.get_json()['predicted'][0] == 'greet'
